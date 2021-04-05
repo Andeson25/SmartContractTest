@@ -1,15 +1,15 @@
 import {useEffect, useMemo, useState} from 'react';
 
 import {BankContract} from '../contracts/bank.contract';
-import {EthereumService} from '../services/ehtreum.service';
+import {EthereumService} from '../services/ethereum.service';
 import {isMetaMaskInstalled} from '../helpers/meta-mask.helper';
 
 export function App() {
     const [account, setAccount] = useState();
     const [loading, setLoading] = useState(true);
     const [balance, setBalance] = useState(0);
+    const [isTestNetwork, setIsTestNetwork] = useState(false);
     const [amount, setAmount] = useState(0);
-    const hasMetaMask = useMemo(() => isMetaMaskInstalled(), []);
     const ethereumService = useMemo(
         () => {
             try {
@@ -30,19 +30,35 @@ export function App() {
                 return null;
             }
         },
-        [ethereumService]
+        []
     );
 
     useEffect(() => {
-        if (hasMetaMask) {
+        if (isMetaMaskInstalled()) {
+            const subscription = ethereumService.onChainChanged
+                .subscribe(() => {
+                    setIsTestNetwork(ethereumService.isTestNetwork);
+                    _requestData();
+                });
+            return () => {
+                subscription.unsubscribe();
+            };
+        }
+    }, []);
+
+    const _requestData = () => {
+        if (ethereumService.isTestNetwork) {
+            setLoading(true);
             ethereumService.requestAccounts()
                 .then(([account]) => setAccount(account))
                 .then(bankContract.getBalance().call)
                 .then(balance => setBalance(balance))
                 .then(() => setLoading(false))
                 .catch(error => console.error(error));
+        } else {
+            setLoading(false);
         }
-    }, []);
+    };
 
     const onWithDraw = () => {
         if (!amount) {
@@ -84,10 +100,18 @@ export function App() {
             });
     };
 
-    if (!hasMetaMask) {
+    if (!isMetaMaskInstalled() || !ethereumService || !bankContract) {
         return (
             <div className="container bg-light my-5 px-5 py-3 text-center">
                 Please Install MetaMask
+            </div>
+        );
+    }
+
+    if (!isTestNetwork) {
+        return (
+            <div className="container bg-light my-5 px-5 py-3 text-center">
+                Please Select Ropsten Test Network
             </div>
         );
     }
