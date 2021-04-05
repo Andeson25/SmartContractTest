@@ -20,7 +20,7 @@ export class EthereumService {
     }
 
     requestAccounts() {
-        return this.ethereum.request({method: 'eth_accounts'});
+        return this.ethereum.request({method: 'eth_requestAccounts'});
     }
 
     contractFactory(contractConstructor) {

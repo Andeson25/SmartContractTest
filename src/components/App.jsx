@@ -1,4 +1,4 @@
-import {createRef, useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {BankContract} from '../contracts/bank.contract';
 import {EthereumService} from '../services/ehtreum.service';
@@ -9,14 +9,27 @@ export function App() {
     const [loading, setLoading] = useState(true);
     const [balance, setBalance] = useState(0);
     const [amount, setAmount] = useState(0);
-    const formRef = createRef();
     const hasMetaMask = useMemo(() => isMetaMaskInstalled(), []);
     const ethereumService = useMemo(
-        () => EthereumService.getInstance(),
+        () => {
+            try {
+                return EthereumService.getInstance();
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        },
         []
     );
     const bankContract = useMemo(
-        () => ethereumService.contractFactory(BankContract),
+        () => {
+            try {
+                return ethereumService.contractFactory(BankContract);
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        },
         [ethereumService]
     );
 
@@ -32,6 +45,10 @@ export function App() {
     }, []);
 
     const onWithDraw = () => {
+        if (!amount) {
+            return;
+        }
+
         setLoading(true);
 
         bankContract.withdraw(amount)
@@ -40,15 +57,18 @@ export function App() {
             .then(balance => {
                 setBalance(balance);
                 setLoading(false);
-                formRef.current.reset();
             })
             .catch(error => {
                 console.error(error);
                 setLoading(false);
-            })
+            });
     };
 
     const onDeposit = () => {
+        if (!amount) {
+            return;
+        }
+
         setLoading(true);
 
         bankContract.deposit(amount)
@@ -57,12 +77,11 @@ export function App() {
             .then(balance => {
                 setBalance(balance);
                 setLoading(false);
-                formRef.current.reset();
             })
             .catch(error => {
                 console.error(error);
                 setLoading(false);
-            })
+            });
     };
 
     if (!hasMetaMask) {
@@ -82,7 +101,7 @@ export function App() {
     }
 
     return (
-        <form ref={formRef} className="container bg-light my-5 px-5 py-3">
+        <form className="container bg-light my-5 px-5 py-3">
             <div className="row">
                 <p className="m-0 col-12 text-center">Account address: {account}</p>
                 <p className="m-0 col-12 text-center">Bank Balance: {balance}</p>
