@@ -17,8 +17,8 @@ module.exports = {
                         test:    /\.(js|jsx)$/,
                         exclude: /(node_modules)/,
                         use:     {
-                            loader:  'babel-loader',
-                            options: {
+                            loader:    'babel-loader',
+                            options:   {
                                 plugins: ['@babel/plugin-proposal-class-properties'],
                                 presets: ['@babel/preset-env', '@babel/preset-react']
                             }
